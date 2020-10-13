@@ -2,10 +2,11 @@ const axios = require('axios');
 const uuid = require('uuid').v4;
 const writeResponse = require('write-response');
 const finalStream = require('final-stream');
+const assignDeep = require('assign-deep');
 
 const selectRandomItemFromArray = require('./utils/selectRandomItemFromArray');
 
-async function handleGet (state, request, response, { collectionId, resource }) {
+async function handleGet (state, request, response, { collectionId, resourceId }) {
   const responses = await Promise.all(
     state.nodes
       .map(node => {
@@ -15,14 +16,30 @@ async function handleGet (state, request, response, { collectionId, resource }) 
       })
   );
 
-  const dataArray = Object.assign(...responses.map(r => r.data));
+  if (resourceId) {
+    const dataArray = Object.assign(...responses.map(r => r.data));
 
-  if (!responses.find(response => response.status === 200)) {
-    writeResponse(404, {}, response);
+    if (!responses.find(response => response.status === 200)) {
+      writeResponse(404, {}, response);
+      return;
+    }
+
+    writeResponse(200, dataArray, response);
     return;
   }
 
-  writeResponse(200, dataArray, response);
+  const dataArray = assignDeep(...responses.map(r => r.data));
+
+  const result = Object
+    .keys(dataArray)
+    .map(key => {
+      return {
+        id: key,
+        ...dataArray[key]
+      };
+    });
+
+  writeResponse(200, result, response);
 }
 
 async function handlePost (state, request, response, { collectionId }) {

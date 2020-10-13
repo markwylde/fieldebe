@@ -4,6 +4,12 @@ const writeResponse = require('write-response');
 const finalStream = require('final-stream');
 
 function handleGet (state, request, response, { collectionId, resourceId }) {
+  if (!resourceId) {
+    const data = state.data[collectionId];
+    writeResponse(200, data, response);
+    return;
+  }
+
   const data = state.data[collectionId] && state.data[collectionId][resourceId];
 
   if (!data) {

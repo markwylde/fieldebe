@@ -61,6 +61,12 @@ async function main () {
   <tr>
     <td><a href="https://www.github.com/markwylde/canhazdb">1.1</a></td>
     <td>GET</td>
+    <td>/:collectionId</td>
+    <td>List all documents for a collection</td>
+  </tr>
+  <tr>
+    <td><a href="https://www.github.com/markwylde/canhazdb">1.1</a></td>
+    <td>GET</td>
     <td>/:collectionId/:documentId</td>
     <td>Get all fields for a document</td>
   </tr>
