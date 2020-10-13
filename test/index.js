@@ -9,7 +9,7 @@ test('create one node', async t => {
 
   const node = await canhazdb({ host: 'localhost', port: 8061 });
 
-  const request = await httpRequest('http://localhost:8061/test');
+  const request = await httpRequest('http://localhost:8061/tests');
 
   node.close();
 
@@ -29,7 +29,7 @@ test('create two node', async t => {
     node2.join('http://localhost:8061')
   ]);
 
-  const request = await httpRequest('http://localhost:8061/test');
+  const request = await httpRequest('http://localhost:8061/tests');
 
   node1.close();
   node2.close();
@@ -45,7 +45,7 @@ test('post: and get some data', async t => {
   const cluster = await createTestCluster(3);
   const node = cluster.getRandomNodeUrl();
 
-  const postRequest = await httpRequest(`${node.url}/test`, {
+  const postRequest = await httpRequest(`${node.url}/tests`, {
     method: 'POST',
     data: {
       a: 1,
@@ -54,7 +54,7 @@ test('post: and get some data', async t => {
     }
   });
 
-  const getRequest = await httpRequest(`${node.url}/test`);
+  const getRequest = await httpRequest(`${node.url}/tests/${postRequest.data.id}`);
 
   cluster.closeAll();
 
@@ -73,7 +73,7 @@ test('post: and get some data - 404 on another node', async t => {
 
   const cluster = await createTestCluster(3);
 
-  const postRequest = await httpRequest(`${cluster.nodes[1].url}/test`, {
+  const postRequest = await httpRequest(`${cluster.nodes[1].url}/tests`, {
     method: 'POST',
     data: {
       a: 1,
@@ -82,7 +82,7 @@ test('post: and get some data - 404 on another node', async t => {
     }
   });
 
-  const getRequest = await httpRequest(`${cluster.nodes[2].url}/testUnfound`);
+  const getRequest = await httpRequest(`${cluster.nodes[2].url}/tests/notfound`);
 
   cluster.closeAll();
 
@@ -97,7 +97,7 @@ test('post: removing old fields', async t => {
 
   const cluster = await createTestCluster(3);
 
-  await httpRequest(`${cluster.nodes[1].url}/test`, {
+  const initialPost = await httpRequest(`${cluster.nodes[1].url}/tests`, {
     method: 'POST',
     data: {
       a: 1,
@@ -106,14 +106,14 @@ test('post: removing old fields', async t => {
     }
   });
 
-  const postRequest = await httpRequest(`${cluster.nodes[1].url}/test`, {
-    method: 'POST',
+  const postRequest = await httpRequest(`${cluster.nodes[1].url}/tests/${initialPost.data.id}`, {
+    method: 'PUT',
     data: {
       d: 4
     }
   });
 
-  const getRequest = await httpRequest(`${cluster.nodes[2].url}/test`);
+  const getRequest = await httpRequest(`${cluster.nodes[2].url}/tests/${initialPost.data.id}`);
 
   cluster.closeAll();
 
@@ -130,7 +130,7 @@ test('delete: record returns a 404', async t => {
 
   const cluster = await createTestCluster(3);
 
-  const postRequest = await httpRequest(`${cluster.nodes[1].url}/test`, {
+  const postRequest = await httpRequest(`${cluster.nodes[1].url}/tests`, {
     method: 'POST',
     data: {
       a: 1,
@@ -139,11 +139,11 @@ test('delete: record returns a 404', async t => {
     }
   });
 
-  const deleteRequest = await httpRequest(`${cluster.nodes[1].url}/test`, {
+  const deleteRequest = await httpRequest(`${cluster.nodes[1].url}/tests/${postRequest.data.id}`, {
     method: 'DELETE'
   });
 
-  const getRequest = await httpRequest(`${cluster.nodes[2].url}/test`);
+  const getRequest = await httpRequest(`${cluster.nodes[2].url}/tests/${postRequest.data.id}`);
 
   cluster.closeAll();
 
@@ -153,3 +153,36 @@ test('delete: record returns a 404', async t => {
   t.equal(deleteRequest.status, 200);
   t.equal(getRequest.status, 404);
 });
+
+// test('find: return two records', async t => {
+//   t.plan(4);
+
+//   const cluster = await createTestCluster(3);
+
+//   await Promise.all([
+//     httpRequest(`${cluster.nodes[1].url}/tests`, {
+//       method: 'POST',
+//       data: { a: 1, b: 2, c: 3 }
+//     }),
+//     httpRequest(`${cluster.nodes[1].url}/tests`, {
+//       method: 'POST',
+//       data: { d: 4, e: 5, f: 6 }
+//     }),
+//     httpRequest(`${cluster.nodes[1].url}/tests`, {
+//       method: 'POST',
+//       data: { g: 7, h: 8, i: 9 }
+//     })
+//   ]);
+
+//   const getRequest = await httpRequest(`${cluster.nodes[2].url}/tests`);
+
+//   cluster.closeAll();
+
+//   t.deepEqual(getRequest.data, [
+//     { id: 'a', a: 1, b: 2, c: 3 },
+//     { id: 'b', d: 4, e: 5, f: 6 },
+//     { id: 'c', g: 7, h: 8, i: 9 }
+//   ]);
+
+//   t.equal(getRequest.status, 404);
+// });

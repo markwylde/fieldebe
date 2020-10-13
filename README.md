@@ -20,7 +20,7 @@ async function main () {
   await node1.join('http://localhost:8062')
   await node2.join('http://localhost:8061')
 
-  await axios(`${node1.url}/test`, {
+  const postRequest = await axios(`${node1.url}/tests`, {
     method: 'POST',
     data: {
       a: 1,
@@ -29,7 +29,7 @@ async function main () {
     }
   });
 
-  const result = await axios(`${node2.url}/test`);
+  const result = await axios(`${node2.url}/tests/${postRequest.data.id}`);
 
   console.log(result.data);
 
@@ -59,22 +59,22 @@ async function main () {
     </td>
   </tr>
   <tr>
-    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
+    <td><a href="https://www.github.com/markwylde/canhazdb">1.1</a></td>
     <td>GET</td>
-    <td>/:collectionName</td>
-    <td>Get all fields for a collection</td>
+    <td>/:collectionId/:documentId</td>
+    <td>Get all fields for a document</td>
   </tr>
   <tr>
     <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
     <td>POST</td>
-    <td>/:collectionName</td>
-    <td>Remove then set all fields on a collection</td>
+    <td>/:collectionId/:documentId</td>
+    <td>Remove then set all fields on a document</td>
   </tr>
   <tr>
-    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
+    <td><a href="https://www.github.com/markwylde/canhazdb">1.3</a></td>
     <td>DELETE</td>
-    <td>/:collectionName</td>
-    <td>Delete all fields for a collection</td>
+    <td>/:collectionId/:documentId</td>
+    <td>Delete all fields for a document</td>
   </tr>
   <tr>
     <td colspan=4>
@@ -83,28 +83,28 @@ async function main () {
     </td>
   </tr>
   <tr>
-    <td><a href="https://www.github.com/markwylde/canhazdb">1.1</a></td>
+    <td><a href="https://www.github.com/markwylde/canhazdb">2.1</a></td>
     <td>GET</td>
-    <td>/_info_</td>
+    <td>/_info</td>
     <td>Get stats and version info for the node</td>
   </tr>
   <tr>
-    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
+    <td><a href="https://www.github.com/markwylde/canhazdb">2.2</a></td>
     <td>GET</td>
-    <td>/_internal/:collectionName</td>
-    <td>Get fields for a collection</td>
+    <td>/_internal/:collectionId/:documentId</td>
+    <td>Get fields for a document</td>
   </tr>
   <tr>
-    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
+    <td><a href="https://www.github.com/markwylde/canhazdb">2.3</a></td>
     <td>POST</td>
-    <td>/_internal/:collectionName</td>
-    <td>Replace fields to a collection</td>
+    <td>/_internal/:collectionId/:documentId</td>
+    <td>Replace fields to a document</td>
   </tr>
   <tr>
-    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
+    <td><a href="https://www.github.com/markwylde/canhazdb">2.4</a></td>
     <td>DELETE</td>
-    <td>/_internal/:collectionName</td>
-    <td>Delete fields to a collection</td>
+    <td>/_internal/:collectionId/:documentId</td>
+    <td>Delete fields to a document</td>
   </tr>
 </table>
 

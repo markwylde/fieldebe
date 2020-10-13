@@ -1,10 +1,11 @@
 const axios = require('axios');
+const uuid = require('uuid').v4;
 const writeResponse = require('write-response');
 const finalStream = require('final-stream');
 
 const selectRandomItemFromArray = require('./utils/selectRandomItemFromArray');
 
-async function handleGet (state, request, response) {
+async function handleGet (state, request, response, { collectionId, resource }) {
   const responses = await Promise.all(
     state.nodes
       .map(node => {
@@ -24,11 +25,34 @@ async function handleGet (state, request, response) {
   writeResponse(200, dataArray, response);
 }
 
-async function handlePost (state, request, response) {
+async function handlePost (state, request, response, { collectionId }) {
+  const body = await finalStream(request).then(JSON.parse);
+  const resourceId = uuid();
+
+  const postsPromises = Object.keys(body).map(key => {
+    const node = selectRandomItemFromArray(state.nodes);
+
+    return axios(`${node.url}/_internal/${collectionId}/${resourceId}`, {
+      method: 'PUT',
+      data: {
+        [key]: body[key]
+      }
+    });
+  });
+
+  await Promise.all(postsPromises);
+
+  writeResponse(201, {
+    id: resourceId,
+    ...body
+  }, response);
+}
+
+async function handlePut (state, request, response, { collectionId, resourceId }) {
   const body = await finalStream(request).then(JSON.parse);
 
   const cleanup = state.nodes.map(node => {
-    return axios(`${node.url}/_internal${request.url}`, {
+    return axios(`${node.url}/_internal/${collectionId}/${resourceId}`, {
       method: 'DELETE'
     });
   });
@@ -38,8 +62,8 @@ async function handlePost (state, request, response) {
   const postsPromises = Object.keys(body).map(key => {
     const node = selectRandomItemFromArray(state.nodes);
 
-    return axios(`${node.url}/_internal${request.url}`, {
-      method: 'POST',
+    return axios(`${node.url}/_internal/${collectionId}/${resourceId}`, {
+      method: 'PUT',
       data: {
         [key]: body[key]
       }
@@ -48,13 +72,15 @@ async function handlePost (state, request, response) {
 
   await Promise.all(postsPromises);
 
-  response.writeHead(201);
-  response.end();
+  writeResponse(201, {
+    id: resourceId,
+    ...body
+  }, response);
 }
 
-async function handleDelete (state, request, response) {
+async function handleDelete (state, request, response, { collectionId, resourceId }) {
   const cleanup = state.nodes.map(node => {
-    return axios(`${node.url}/_internal${request.url}`, {
+    return axios(`${node.url}/_internal/${collectionId}/${resourceId}`, {
       method: 'DELETE'
     });
   });
@@ -66,18 +92,25 @@ async function handleDelete (state, request, response) {
 }
 
 function handleExternal (state, request, response) {
+  const [, collectionId, resourceId] = request.url.split('/');
+
   if (request.method === 'GET') {
-    handleGet(state, request, response);
+    handleGet(state, request, response, { collectionId, resourceId });
     return;
   }
 
   if (request.method === 'POST') {
-    handlePost(state, request, response);
+    handlePost(state, request, response, { collectionId, resourceId });
+    return;
+  }
+
+  if (request.method === 'PUT') {
+    handlePut(state, request, response, { collectionId, resourceId });
     return;
   }
 
   if (request.method === 'DELETE') {
-    handleDelete(state, request, response);
+    handleDelete(state, request, response, { collectionId, resourceId });
     return;
   }
 

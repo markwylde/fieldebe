@@ -3,8 +3,8 @@ const packageJson = require('./package.json');
 const writeResponse = require('write-response');
 const finalStream = require('final-stream');
 
-function handleGet (state, request, response, resourceUrl) {
-  const data = state.data[resourceUrl];
+function handleGet (state, request, response, { collectionId, resourceId }) {
+  const data = state.data[collectionId] && state.data[collectionId][resourceId];
 
   if (!data) {
     writeResponse(404, {}, response);
@@ -14,17 +14,21 @@ function handleGet (state, request, response, resourceUrl) {
   writeResponse(200, data, response);
 }
 
-async function handlePost (state, request, response, resourceUrl) {
+async function handlePut (state, request, response, { collectionId, resourceId }) {
   const body = await finalStream(request).then(JSON.parse);
 
-  state.data[resourceUrl] = state.data[resourceUrl] || {};
-  Object.assign(state.data[resourceUrl], body);
+  state.data[collectionId] = state.data[collectionId] || {};
+  state.data[collectionId][resourceId] = state.data[collectionId][resourceId] || {};
+
+  Object.assign(state.data[collectionId][resourceId], body);
 
   writeResponse(200, {}, response);
 }
 
-async function handleDelete (state, request, response, resourceUrl) {
-  delete state.data[resourceUrl];
+async function handleDelete (state, request, response, { collectionId, resourceId }) {
+  if (state.data[collectionId]) {
+    delete state.data[collectionId][resourceId];
+  }
 
   writeResponse(200, {}, response);
 }
@@ -39,19 +43,20 @@ async function handleInternal (state, request, response) {
   }
 
   const resourceUrl = request.url.substr('/_internal'.length);
+  const [, collectionId, resourceId] = resourceUrl.split('/');
 
   if (request.method === 'GET') {
-    handleGet(state, request, response, resourceUrl);
+    handleGet(state, request, response, { collectionId, resourceId });
     return;
   }
 
-  if (request.method === 'POST') {
-    handlePost(state, request, response, resourceUrl);
+  if (request.method === 'PUT') {
+    handlePut(state, request, response, { collectionId, resourceId });
     return;
   }
 
   if (request.method === 'DELETE') {
-    handleDelete(state, request, response, resourceUrl);
+    handleDelete(state, request, response, { collectionId, resourceId });
     return;
   }
 
