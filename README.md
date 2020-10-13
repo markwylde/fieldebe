@@ -9,8 +9,8 @@
 A shaded and clustered database communicated over http rest.
 
 ## Getting Started
-### From NodeJS
 ```javascript
+const axios = require('axios');
 const canhazdb = require('canhazdb');
 
 async function main () {
@@ -20,7 +20,7 @@ async function main () {
   await node1.join('http://localhost:8062')
   await node2.join('http://localhost:8061')
 
-  const postRequest = await httpRequest(`${node.url}/test`, {
+  await axios(`${node1.url}/test`, {
     method: 'POST',
     data: {
       a: 1,
@@ -28,6 +28,18 @@ async function main () {
       c: 3
     }
   });
+
+  const result = await axios(`${node2.url}/test`);
+
+  console.log(result.data);
+
+  /*
+    {
+      b: 2,
+      a: 1,
+      c: 3
+    }
+  */
 }
 ```
 
@@ -39,6 +51,30 @@ async function main () {
     <th>Method</th>
     <th>Path</th>
     <th>Description</th>
+  </tr>
+  <tr>
+    <td colspan=4>
+      <strong>External</strong></br>
+      These requests will collect results from all known nodes.
+    </td>
+  </tr>
+  <tr>
+    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
+    <td>GET</td>
+    <td>/:collectionName</td>
+    <td>Get all fields for a collection</td>
+  </tr>
+  <tr>
+    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
+    <td>POST</td>
+    <td>/:collectionName</td>
+    <td>Remove then set all fields on a collection</td>
+  </tr>
+  <tr>
+    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
+    <td>DELETE</td>
+    <td>/:collectionName</td>
+    <td>Delete all fields for a collection</td>
   </tr>
   <tr>
     <td colspan=4>
@@ -69,30 +105,6 @@ async function main () {
     <td>DELETE</td>
     <td>/_internal/:collectionName</td>
     <td>Delete fields to a collection</td>
-  </tr>
-  <tr>
-    <td colspan=4>
-      <strong>Internal</strong></br>
-      These requests are scoped only to the data within that node.
-    </td>
-  </tr>
-  <tr>
-    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
-    <td>GET</td>
-    <td>/:collectionName</td>
-    <td>Get all fields for a collection</td>
-  </tr>
-  <tr>
-    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
-    <td>POST</td>
-    <td>/:collectionName</td>
-    <td>Remove then set all fields on a collection</td>
-  </tr>
-  <tr>
-    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
-    <td>DELETE</td>
-    <td>/:collectionName</td>
-    <td>Delete all fields for a collection</td>
   </tr>
 </table>
 
