@@ -3,16 +3,7 @@ const packageJson = require('./package.json');
 const writeResponse = require('write-response');
 const finalStream = require('final-stream');
 
-const partialMatch = (o, p, c) =>
-  Object.keys(p).every(k =>
-    p[k] && o[k]
-      ? p[k] instanceof Object
-        ? partialMatch(o[k], p[k], c)
-        : c
-          ? o[k].toLowerCase().includes(p[k].toLowerCase())
-          : p[k] === o[k]
-      : false
-  );
+const partiallyMatchObject = require('./utils/partiallyMatchObject');
 
 function handleGetOne (state, request, response, { collectionId, resourceId }) {
   const data = state.data[collectionId] && state.data[collectionId][resourceId];
@@ -38,7 +29,7 @@ function handleGetAll (state, request, response, { collectionId, resourceId, url
         return ids.includes(key);
       }
 
-      return query ? partialMatch(data[key], query) : true;
+      return query ? partiallyMatchObject(data[key], query) : true;
     })
     .map(key => {
       return {
