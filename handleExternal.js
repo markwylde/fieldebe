@@ -2,44 +2,70 @@ const axios = require('axios');
 const uuid = require('uuid').v4;
 const writeResponse = require('write-response');
 const finalStream = require('final-stream');
-const assignDeep = require('assign-deep');
 
 const selectRandomItemFromArray = require('./utils/selectRandomItemFromArray');
 
-async function handleGet (state, request, response, { collectionId, resourceId }) {
+async function handleGetOne (state, request, response, { collectionId, resourceId }) {
   const responses = await Promise.all(
     state.nodes
       .map(node => {
-        return axios(`${node.url}/_internal${request.url}`, {
+        return axios(`${node.url}/_internal/${collectionId}/${resourceId}`, {
           validateStatus: status => [200, 404].includes(status)
         });
       })
   );
 
-  if (resourceId) {
-    const dataArray = Object.assign(...responses.map(r => r.data));
+  const dataArray = Object.assign(...responses.map(r => r.data));
 
-    if (!responses.find(response => response.status === 200)) {
-      writeResponse(404, {}, response);
-      return;
-    }
-
-    writeResponse(200, dataArray, response);
+  if (!responses.find(response => response.status === 200)) {
+    writeResponse(404, {}, response);
     return;
   }
 
-  const dataArray = assignDeep(...responses.map(r => r.data));
+  writeResponse(200, dataArray, response);
+}
 
-  const result = Object
-    .keys(dataArray)
-    .map(key => {
-      return {
-        id: key,
-        ...dataArray[key]
-      };
-    });
+async function handleGetAll (state, request, response, { collectionId, url }) {
+  const lookupResponses = await Promise.all(
+    state.nodes
+      .map(node => {
+        return axios(`${node.url}/_internal/${collectionId}${url.search}`, {
+          validateStatus: status => [200, 404].includes(status)
+        });
+      })
+  );
 
-  writeResponse(200, result, response);
+  const ids = lookupResponses
+    .map(response => response.data)
+    .flat()
+    .filter(item => item.id)
+    .map(item => item.id);
+
+  if (ids.length === 0) {
+    writeResponse(200, [], response);
+    return;
+  }
+
+  const fullResponses = await Promise.all(
+    state.nodes
+      .map(node => {
+        return axios(`${node.url}/_internal/${collectionId}?ids=${ids.join(',')}`, {
+          validateStatus: status => [200, 404].includes(status)
+        });
+      })
+  );
+
+  const fullResponsesData = fullResponses.map(r => r.data).flat();
+
+  const keyed = fullResponsesData.reduce((keyed, data) => {
+    keyed[data.id] = keyed[data.id] || {};
+    Object.assign(keyed[data.id], data);
+    return keyed;
+  }, {});
+
+  const results = Object.values(keyed);
+
+  writeResponse(200, results, response);
 }
 
 async function handlePost (state, request, response, { collectionId }) {
@@ -109,10 +135,17 @@ async function handleDelete (state, request, response, { collectionId, resourceI
 }
 
 function handleExternal (state, request, response) {
-  const [, collectionId, resourceId] = request.url.split('/');
+  const url = new URL(request.url, 'http://localhost');
 
-  if (request.method === 'GET') {
-    handleGet(state, request, response, { collectionId, resourceId });
+  const [, collectionId, resourceId] = url.pathname.split('/');
+
+  if (request.method === 'GET' && resourceId) {
+    handleGetOne(state, request, response, { collectionId, resourceId });
+    return;
+  }
+
+  if (request.method === 'GET' && !resourceId) {
+    handleGetAll(state, request, response, { collectionId, url });
     return;
   }
 

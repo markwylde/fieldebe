@@ -77,6 +77,12 @@ async function main () {
     <td>Remove then set all fields on a document</td>
   </tr>
   <tr>
+    <td><a href="https://www.github.com/markwylde/canhazdb">1.2</a></td>
+    <td>PATCH</td>
+    <td>/:collectionId/:documentId</td>
+    <td>Set fields on a document</td>
+  </tr>
+  <tr>
     <td><a href="https://www.github.com/markwylde/canhazdb">1.3</a></td>
     <td>DELETE</td>
     <td>/:collectionId/:documentId</td>
@@ -103,6 +109,12 @@ async function main () {
   <tr>
     <td><a href="https://www.github.com/markwylde/canhazdb">2.3</a></td>
     <td>POST</td>
+    <td>/_internal/:collectionId/:documentId</td>
+    <td>Replace all fields to a document</td>
+  </tr>
+  <tr>
+    <td><a href="https://www.github.com/markwylde/canhazdb">2.3</a></td>
+    <td>PATCH</td>
     <td>/_internal/:collectionId/:documentId</td>
     <td>Replace fields to a document</td>
   </tr>

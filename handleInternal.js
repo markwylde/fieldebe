@@ -3,13 +3,18 @@ const packageJson = require('./package.json');
 const writeResponse = require('write-response');
 const finalStream = require('final-stream');
 
-function handleGet (state, request, response, { collectionId, resourceId }) {
-  if (!resourceId) {
-    const data = state.data[collectionId];
-    writeResponse(200, data, response);
-    return;
-  }
+const partialMatch = (o, p, c) =>
+  Object.keys(p).every(k =>
+    p[k] && o[k]
+      ? p[k] instanceof Object
+        ? partialMatch(o[k], p[k], c)
+        : c
+          ? o[k].toLowerCase().includes(p[k].toLowerCase())
+          : p[k] === o[k]
+      : false
+  );
 
+function handleGetOne (state, request, response, { collectionId, resourceId }) {
   const data = state.data[collectionId] && state.data[collectionId][resourceId];
 
   if (!data) {
@@ -18,6 +23,31 @@ function handleGet (state, request, response, { collectionId, resourceId }) {
   }
 
   writeResponse(200, data, response);
+}
+
+function handleGetAll (state, request, response, { collectionId, resourceId, url }) {
+  const data = state.data[collectionId] || {};
+
+  const query = url.searchParams.get('query') && JSON.parse(url.searchParams.get('query'));
+  const ids = url.searchParams.get('ids') && url.searchParams.get('ids').split(',');
+
+  const filtered = Object
+    .keys(data)
+    .filter(key => {
+      if (ids) {
+        return ids.includes(key);
+      }
+
+      return query ? partialMatch(data[key], query) : true;
+    })
+    .map(key => {
+      return {
+        id: key,
+        ...data[key]
+      };
+    });
+
+  writeResponse(200, filtered, response);
 }
 
 async function handlePut (state, request, response, { collectionId, resourceId }) {
@@ -40,6 +70,8 @@ async function handleDelete (state, request, response, { collectionId, resourceI
 }
 
 async function handleInternal (state, request, response) {
+  const url = new URL(request.url, 'http://localhost');
+
   if (request.url === '/_info') {
     writeResponse(200, {
       version: packageJson.version
@@ -48,11 +80,16 @@ async function handleInternal (state, request, response) {
     return;
   }
 
-  const resourceUrl = request.url.substr('/_internal'.length);
+  const resourceUrl = url.pathname.substr('/_internal'.length);
   const [, collectionId, resourceId] = resourceUrl.split('/');
 
-  if (request.method === 'GET') {
-    handleGet(state, request, response, { collectionId, resourceId });
+  if (request.method === 'GET' && resourceId) {
+    handleGetOne(state, request, response, { collectionId, resourceId });
+    return;
+  }
+
+  if (request.method === 'GET' && !resourceId) {
+    handleGetAll(state, request, response, { collectionId, resourceId, url });
     return;
   }
 

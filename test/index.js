@@ -195,3 +195,36 @@ test('find: return two records', async t => {
   t.deepEqual(getRequest.data.find(item => item.d), { d: 4, e: 5, f: 6 });
   t.deepEqual(getRequest.data.find(item => item.g), { g: 7, h: 8, i: 9 });
 });
+
+test('filter: find one out of three records', async t => {
+  t.plan(4);
+
+  const cluster = await createTestCluster(3);
+
+  await Promise.all([
+    httpRequest(`${cluster.nodes[1].url}/tests`, {
+      method: 'POST',
+      data: { a: 1, b: 2, c: 3 }
+    }),
+    httpRequest(`${cluster.nodes[1].url}/tests`, {
+      method: 'POST',
+      data: { d: 4, e: 5, f: 6 }
+    }),
+    httpRequest(`${cluster.nodes[1].url}/tests`, {
+      method: 'POST',
+      data: { g: 7, h: 8, i: 9 }
+    })
+  ]);
+
+  const getRequest = await httpRequest(`${cluster.nodes[2].url}/tests?query={"d":4}`);
+
+  cluster.closeAll();
+
+  t.equal(getRequest.data.length, 1);
+  t.equal(getRequest.status, 200);
+
+  t.ok(getRequest.data[0].id);
+  delete getRequest.data[0].id;
+
+  t.deepEqual(getRequest.data[0], { d: 4, e: 5, f: 6 });
+});
