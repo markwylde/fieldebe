@@ -6,7 +6,7 @@
 [![GitHub](https://img.shields.io/github/license/markwylde/canhazdb)](https://github.com/markwylde/canhazdb/blob/master/LICENSE)
 [![js-semistandard-style](https://img.shields.io/badge/code%20style-semistandard-brightgreen.svg?style=flat-square)](https://github.com/standard/semistandard)
 
-A shaded and clustered database communicated over http rest.
+A sharded and clustered database communicated over http rest.
 
 ## Getting Started
 ```javascript
@@ -67,7 +67,7 @@ async function main () {
   <tr>
     <td><a href="https://www.github.com/markwylde/canhazdb">1.1</a></td>
     <td>GET</td>
-    <td>/:collectionId?query={"exampleKey":"exampleValue"}</td>
+    <td>/:collectionId?query={"a":1}</td>
     <td>List all documents partially matching query</td>
   </tr>
   <tr>
